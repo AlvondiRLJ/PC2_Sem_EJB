@@ -1,0 +1,335 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <ui:composition template="/templates/template.xhtml">
+        <ui:define name="titulo">
+            Manutenção de Contratos
+        </ui:define>
+        <ui:define name="conteudo">
+            <h:form id="formListagem">
+                <p:growl id="growl"/>
+                <p:commandButton value="Novo Contrato"
+                                 actionListener="#{controleContrato.novo()}"
+                                 update=":formEdicao"
+                                 process="@form"
+                                 oncomplete="PF('dlg').show();"/>
+                <div align="center">
+                    <p:panelGrid columns="1">
+                        <f:facet name="header">  
+                            Filtro Ordenação e Paginação 
+                        </f:facet>                          
+                        <p:column  colspan="13" rowspan="1">     
+                            <p:commandButton actionListener="#{controleContrato.novo()}"
+                                             value="Novo" oncomplete="PF('dlg').show();"
+                                             update=":formEdicao" icon="ui-icon-plus"/>                                                        
+                            <h:outputLabel for="ordem" value="Ordem" />     
+                            <h:selectOneMenu id="ordem" 
+                                             value="#{controleContrato.dao.currentOrder}"
+                                             converter="#{controleContrato.dao.converterOrder}">
+                                <f:selectItems value="#{controleContrato.dao.listOrder}" />
+                                <p:ajax update="formListagem" 
+                                        listener="#{controleContrato.listar()}"/>
+                            </h:selectOneMenu>                            
+                            <h:outputLabel for="maximoObjetos" value="Máximo de objetos" />
+                            <p:inputText id="maximoObjetos"  
+                                         value="#{controleContrato.dao.maxObjects}" size="2"
+                                         onkeydown="Mascara(this, Integer);"
+                                         onkeypress="Mascara(this, Integer);"
+                                         onkeyup="Mascara(this, Integer);">
+                                <p:ajax update="tabela"
+                                        listener="#{controleContrato.listar()}" event="keyup"/>                          
+                            </p:inputText>                      
+                            <h:outputLabel for="filtro" value="Filtro" />
+                            <p:inputText id="filtro" placeholder="Digite o filtro"
+                                         value="#{controleContrato.dao.filter}" >
+                                <p:ajax update="tabela" 
+                                        listener="#{controleContrato.listar()}" event="keyup"/>                            
+                            </p:inputText>
+                            <p:commandButton id="btnFiltrar" update="formListagem" 
+                                             actionListener="#{controleContrato.listar()}" icon="ui-icon-search" />  
+                            <p:commandButton id="btnPrimeiro" update="formListagem" 
+                                             actionListener="#{controleContrato.dao.first()}" icon="ui-icon-seek-start"/>  
+                            <p:commandButton id="btnAnterior" update="formListagem" 
+                                             actionListener="#{controleContrato.dao.previous()}" icon="ui-icon-seek-prev"/>  
+                            <p:commandButton  id="btnProximo" update="formListagem" 
+                                              actionListener="#{controleContrato.dao.next()}" icon="ui-icon-seek-next"/>  
+                            <p:commandButton id="btnUltimo" update="formListagem" 
+                                             actionListener="#{controleContrato.dao.last()}" icon="ui-icon-seek-end" /> 
+                        </p:column>  
+                    </p:panelGrid>                     
+                </div> 
+                <p:dataTable value="#{controleContrato.dao.listObjects}"
+                             id="tabela"
+                             emptyMessage="Nenhum registro encontrado"
+                             var="obj">
+                    <f:facet name="footer">
+                        <div align="center">
+                            <p:outputLabel 
+                                value="#{controleEstado.dao.navigationMessage}"/>
+                        </div>
+                    </f:facet>
+                    <p:column headerText="Codigo">
+                        <p:outputLabel value="#{obj.codigo}"/>
+                    </p:column>
+                    <p:column headerText="Número">
+                        <p:outputLabel value="#{obj.numero}"/>
+                    </p:column>    
+                    <p:column headerText="Ações">
+                        <div align="center">
+                            <p:commandButton icon="ui-icon-pencil"
+                                             action="#{controleContrato.editar(obj.codigo)}"
+                                             oncomplete="PF('dlg').show();"
+                                             update=":formEdicao"
+                                             process="@form"/>
+                            <p:commandButton icon="ui-icon-trash"
+                                             action="#{controleContrato.excluir(obj.codigo)}"
+                                             update="@form" process="@form"
+                                             onclick="if (!confirm('Confirma a exclusão do objeto?'))
+                                                         return false"/>                            
+                        </div>
+                    </p:column>
+                </p:dataTable>
+            </h:form>
+        </ui:define>
+        <ui:define name="dialogos">
+            <p:dialog header="Edição" widgetVar="dlg"
+                      resizable="false" modal="true" width="550" height="480">
+                <h:form id="formEdicao" prependId="false">
+                    <p:growl id="growl"/>
+                    <p:tabView id="tab">
+                        <p:tab title="Dados Principais">
+                            <div align="center">
+                                <p:panelGrid columns="2">
+                                    <f:facet name="footer">
+                                        <div align="center">
+                                            <p:commandButton actionListener="#{controleContrato.salvar()}"
+                                                             update=":formListagem :formEdicao"
+                                                             value="Salvar"
+                                                             icon="ui-icon-disk"
+                                                             oncomplete="if (!args.validationFailed) {PF('dlg').hide();}"/>
+                                        </div>                            
+                                    </f:facet>
+                                    <p:outputLabel value="Codigo"/>
+                                    <p:inputText value="#{controleContrato.objeto.codigo}" readonly="true" size="5"/>
+                                    <p:outputLabel value="Numero" for="txtNumero"/>
+                                    <p:inputText value="#{controleContrato.objeto.numero}" id="txtNumero" 
+                                                 size="50" maxlength="50"/>
+                                    <p:outputLabel value="Data Assinatura" for="txtDataAssinatura"/>
+                                    <p:calendar value="#{controleContrato.objeto.dataAssinatura}"
+                                                id="txtDataAssinatura"
+                                                mask="true" pattern="dd/MM/yyyy" navigator="true">
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:calendar>
+                                    <p:outputLabel value="Data Inicio" for="txtDataInicio"/>
+                                    <p:calendar value="#{controleContrato.objeto.dataInicio}"
+                                                id="txtDataInicio"
+                                                mask="true" pattern="dd/MM/yyyy" navigator="true">
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:calendar>
+                                    <p:outputLabel value="Data Fim" for="txtDataFim"/>
+                                    <p:calendar value="#{controleContrato.objeto.dataFim}"
+                                                id="txtDataFim"
+                                                mask="true" pattern="dd/MM/yyyy" navigator="true">
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:calendar>
+                                    <p:outputLabel value="Valor" for="txtValor"/>
+                                    <p:inputText value="#{controleContrato.objeto.valor}" id="txtValor"
+                                                 size="14"/>
+                                </p:panelGrid>
+                            </div>
+                        </p:tab>
+                        <p:tab title="Aditivos" titletip="Aditivos">
+                            <p:dataTable value="#{controleContrato.objeto.aditivos}"
+                                         var="adt" rowIndexVar="idx"
+                                         id="listaAditivos">
+                                <f:facet name="header">
+                                    <p:commandButton value="Novo aditivo"
+                                                     actionListener="#{controleContrato.novoAditivo()}"
+                                                     update=":formAditivo"
+                                                     icon="ui-icon-plus"
+                                                     id="btnNovoAditivo"
+                                                     process="btnNovoAditivo"
+                                                     oncomplete="PF('dlgAditivo').show();"/>
+                                </f:facet>
+                                <p:column headerText="Periodo">
+                                    <p:outputLabel value="#{adt.periodo}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy"/>
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:outputLabel>
+                                </p:column>
+                                <p:column headerText="Reajuste">
+                                    <p:outputLabel value="#{adt.reajustevalor}">
+                                        <f:convertNumber pattern="R$ 0.00"/>
+                                    </p:outputLabel>
+                                </p:column>
+                                <p:column headerText="Ações">
+                                    <div align="center">
+                                        <p:commandButton id="btnAlterarAditivo"
+                                                         icon="ui-icon-pencil"
+                                                         actionListener="#{controleContrato.alterarAditivo(idx)}"
+                                                         process="btnAlterarAditivo"
+                                                         update=":formAditivo"
+                                                         oncomplete="PF('dlgAditivo').show();"/>
+                                        <p:commandButton id="btnExcluirAditivo"
+                                                         icon="ui-icon-trash"
+                                                         actionListener="#{controleContrato.removerAditivo(idx)}"
+                                                         process="btnExcluirAditivo"
+                                                         update="listaAditivos :formListagem:growl"
+                                                         onclick="if (!confirm('Confirma a exclusão?'))
+                                                                     return false"/>
+                                    </div>
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+                        <p:tab title="Objetos" titletip="Objetos">
+                            <div align="center">
+                                <p:panelGrid columns="3">
+                                    <p:outputLabel value="Objeto"/>
+                                    <p:selectOneMenu value="#{controleContrato.obj}"
+                                                     id="selectObjeto">
+                                        <f:converter converterId="converterObjeto"/>
+                                        <f:selectItems value="#{controleContrato.daoObjeto.listAll}"
+                                                       var="o" itemLabel="#{o.descricao}"/>
+                                    </p:selectOneMenu>
+                                    <p:commandButton 
+                                        actionListener="#{controleContrato.adicionarObjeto()}"
+                                        update="listaObjetos :formListagem:growl" 
+                                        icon="ui-icon-plus" id="btnNovoObjeto"
+                                        process="btnNovoObjeto selectObjeto"/>
+                                </p:panelGrid>    
+                            </div>                            
+                            <p:dataTable value="#{controleContrato.objeto.objetos}" var="obje" 
+                                         id="listaObjetos">
+                                <p:column headerText="Codigo">
+                                    <p:outputLabel value="#{obje.codigo}"/>                                    
+                                </p:column>
+                                <p:column headerText="Descricao">
+                                    <p:outputLabel value="#{obje.descricao}"/>                                    
+                                </p:column>
+                                <p:column headerText="Ações">
+                                    <div align="center">
+                                        <p:commandButton id="btnExcluirObjeto"
+                                                         icon="ui-icon-trash"
+                                                         actionListener="#{controleContrato.removerObjeto(obje)}"
+                                                         process="btnExcluirObjeto"
+                                                         update="listaObjetos :formListagem:growl"
+                                                         onclick="if (!confirm('Confirma a exclusão?'))
+                                                                     return false"/>
+                                    </div>
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+                        <p:tab title="Envolvidos" titletip="Envolvidos">
+                            <p:dataTable value="#{controleContrato.objeto.envolvidos}"
+                                         var="env" rowIndexVar="idxenv"
+                                         id="listaEnvolvidos">
+                                <f:facet name="header">
+                                    <p:commandButton value="Novo envolvido"
+                                                     actionListener="#{controleContrato.novoEnvolvido()}"
+                                                     update=":formEnvolvido"
+                                                     icon="ui-icon-plus"
+                                                     id="btnNovoEnvolvido"
+                                                     process="btnNovoEnvolvido"
+                                                     oncomplete="PF('dlgEnvolvido').show();"/>
+                                </f:facet>
+                                <p:column headerText="Envolvido">
+                                    <p:outputLabel value="#{env.pessoa.nome}"/>
+                                </p:column>
+                                <p:column headerText="Tipo">
+                                    <p:outputLabel value="#{env.tipo}"/>
+                                </p:column>
+                                <p:column headerText="Descricao">
+                                    <p:outputLabel value="#{env.descricao}"/>
+                                </p:column>
+                                <p:column headerText="Ações">
+                                    <div align="center">
+                                        <p:commandButton id="btnAlterarEnvolvido"
+                                                         icon="ui-icon-pencil"
+                                                         actionListener="#{controleContrato.alterarEnvolvido(idxenv)}"
+                                                         process="btnAlterarEnvolvido"
+                                                         update=":formEnvolvido"
+                                                         oncomplete="PF('dlgEnvolvido').show();"/>
+                                        <p:commandButton id="btnExcluirEnvolvido"
+                                                         icon="ui-icon-trash"
+                                                         actionListener="#{controleContrato.removerEnvolvido(idxenv)}"
+                                                         process="btnExcluirEnvolvido"
+                                                         update="listaEnvolvidos :formListagem:growl"
+                                                         onclick="if (!confirm('Confirma a exclusão?'))
+                                                                     return false"/>
+                                    </div>
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+                    </p:tabView>
+                </h:form>         
+            </p:dialog>
+            <p:dialog header="Edição de aditivos"
+                      widgetVar="dlgAditivo" resizable="false" 
+                      modal="true">
+                <h:form id="formAditivo">
+                    <p:growl/>
+                    <p:panelGrid columns="2">
+                        <f:facet name="footer">
+                            <div align="center">
+                                <p:commandButton id="btnAdicionarAditivo"
+                                                 value="Salvar" icon="ui-icon-disk"
+                                                 actionListener="#{controleContrato.salvarAditivo()}"
+                                                 update=":formEdicao:tab:listaAditivos formAditivo :formEdicao:growl"
+                                                 process="btnAdicionarAditivo txtPeriodo txtReajusteValor"
+                                                 oncomplete="if(!args.validationFailed) {PF('dlgAditivo').hide();}"/>
+                            </div>
+                        </f:facet>
+                        <p:outputLabel value="Periodo" for="txtPeriodo"/>
+                        <p:calendar value="#{controleContrato.aditivo.periodo}"
+                                    id="txtPeriodo"
+                                    mask="true" pattern="dd/MM/yyyy" navigator="true">
+                            <f:converter converterId="converterCalendar"/>
+                        </p:calendar>
+                        <p:outputLabel for="txtReajusteValor" value="Reajuste"/>
+                        <p:inputText id="txtReajusteValor"
+                                     value="#{controleContrato.aditivo.reajustevalor}"
+                                     size="30" maxlength="30"/>
+                    </p:panelGrid>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Edição de envolvidos"
+                      widgetVar="dlgEnvolvido" resizable="false" 
+                      modal="true">
+                <h:form id="formEnvolvido">
+                    <p:growl/>
+                    <p:panelGrid columns="2">
+                        <f:facet name="footer">
+                            <div align="center">
+                                <p:commandButton id="btnAdicionarEnvolvido"
+                                                 value="Salvar" icon="ui-icon-disk"
+                                                 actionListener="#{controleContrato.salvarEnvolvido()}"
+                                                 update=":formEdicao:tab:listaEnvolvidos formEnvolvido :formEdicao:growl"
+                                                 process="btnAdicionarEnvolvido txtTipo txtDescricao selectEnvolvido"
+                                                 oncomplete="if(!args.validationFailed) {PF('dlgEnvolvido').hide();}"/>
+                            </div>
+                        </f:facet>
+                        <p:outputLabel value="Tipo" for="txtTipo"/>
+                        <p:inputText id="txtTipo"
+                                     value="#{controleContrato.envolvido.tipo}"
+                                     size="30" maxlength="30"/>
+                        <p:outputLabel value="Descricao" for="txtDescricao"/>
+                        <p:inputText id="txtDescricao"
+                                     value="#{controleContrato.envolvido.descricao}"
+                                     size="30" maxlength="30"/>
+                        <p:outputLabel value="Pessoaaa" for="selectEnvolvido"/>
+                        <p:selectOneMenu value="#{controleContrato.envolvido.pessoa}"
+                                                     id="selectEnvolvido">
+                                        <f:converter converterId="converterPessoa"/>
+                                        <f:selectItems value="#{controleContrato.daoPessoa.listObjects}"
+                                                       var="e" itemLabel="#{e.nome}"/>
+                        </p:selectOneMenu>
+                    </p:panelGrid>
+                </h:form>
+            </p:dialog>
+        </ui:define>
+    </ui:composition>
+</html>
