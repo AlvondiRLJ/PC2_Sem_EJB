@@ -30,6 +30,20 @@ public class PessoaDAO<T> extends GenericDAO<Pessoa> implements Serializable {
         super.setConverterOrder(new ConverterOrder(super.getListOrder()));
     }
     
+    @Override
+    public Pessoa getObjectById(Integer id) throws Exception {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("GenContracts_SemEJBPU");
+        EntityManager em = emf.createEntityManager();
+        try {
+            return em.find(Pessoa.class, id);
+        } catch (Exception e){
+            throw  new Exception("Erro ao executar a operação de persistência: "+e.getMessage());
+        } finally{
+            em.close();
+            emf.close();
+        }
+    }    
+    
     public boolean login(String usuario, String senha) {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("GenContracts_SemEJBPU");
         EntityManager em = emf.createEntityManager();
